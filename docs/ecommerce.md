@@ -28,7 +28,8 @@ From a database perspective, this interface primarily interacts with the product
 
 ```javascript
 db.products.find({ 
-    promoted: true, 
+    promoted: true,
+    is_active: true, 
     stock_quantity:{ 
         $gt: 1
     } 
@@ -37,7 +38,7 @@ db.products.find({
     _id: 0,
     name: 1,
     price: 1,
-    picture: 1
+    picture_link: 1
 })
 .sort({ 
     published: -1 
