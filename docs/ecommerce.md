@@ -121,7 +121,7 @@ project({
 
 #### Add Item to the Cart
 
-As discussed in the Homepage and Product page sections, items can be added to the cart from multiple interfaces within the application. Both the Homepage's product grid and the Product Page include 'Add to Cart' buttons that trigger the cart update process. When a customer clicks these buttons, the application needs to handle various scenarios: creating a new cart, adding new products, or updating existing product quantitie
+As discussed in the Homepage and Product page sections, items can be added to the cart from multiple interfaces within the application. Both the Homepage's product grid and the Product Page include 'Add to Cart' buttons that trigger the cart update process. When a customer clicks these buttons, the application needs to handle various scenarios: creating a new cart, adding new products, or updating existing product quantities.
 
 ```javascript
 [{
@@ -274,7 +274,7 @@ On the other hand deleting items from the cart requires a specialized database o
                     $filter: {
                       input: "$cart_item",
                       as: "item",
-                      cond: { $ne: ["$$item.product_name", "Wireless Headphones"] }
+                      cond: { $ne: ["$$item.product_name", "product_name"] }
                     }
                   }
                 }, 
