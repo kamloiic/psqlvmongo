@@ -84,6 +84,7 @@ db.products.find({
       dimensions:1
     });
 ```
+Also, from this view you can add a product to the cart. From a database perspective you will find what kind of query this will.
 
 ### Review Cart and Confirm Order Page
 
@@ -293,3 +294,89 @@ On the other hand deleting items from the cart requires a specialized database o
     }
   ]
   ```
+
+ #### Order Processing:
+  "Place order" button: It displays a call-to-action that completes the purchase process. When clicked, this button initiates the creation of a new order record in the orders collection, which then becomes visible in the Orders page. This action effectively transforms cart items into an order with a unique tracking number and timestamp. To see how this works from a database perspective navigate to [orders page](#orders-page).
+
+
+
+### Orders Page
+
+![Orders Page Wireframe](/docs/pics/orders_page.png)
+
+The Orders page provides customers with a comprehensive view of their order history, enabling them to track and manage previous purchases. Key features of this interface include:
+
+- **Order List**: Displays all orders made by the customer in a scrollable list format, showing:
+  - Order picture: Visual picture representing the product
+  - Order creation date: When the order was placed
+  - Order amount: Total cost of the purchase
+  - Tracking number: Unique identifier for shipping and order management
+  - Name: Name of the product
+  - Description: Brief summary of the product
+
+- **Order Details**: Each order entry includes a "View Details" button that allows customers to access more comprehensive information about their specific purchase, including detailed item listings, shipping status, and delivery information. This will open a separate tab named Order Details (link)
+
+From a database perspective, this interface primarily interacts with the orders collection. The MongoDB schema will need to support efficient retrieval of order history for a specific customer, including basic order details with the option to access more comprehensive information upon request. Here's an example query that retrieves a user's order history:
+
+```javascript
+db.orders.find({ 
+    email: "customer_email"
+})
+.project({
+    created_at: 1,
+    "items.product_name": 1,
+    "items.description":1,
+    "items.quantity":1,
+    tracking_number: 1,
+})
+.sort({ 
+    created_at: -1 
+});
+```
+
+When considering how orders items are added to an order from a database perspective, an example query, where one document is created for each item in the cart, could be as follows:
+```javascript
+db.orders.insert({ 
+     email: "customer@example.com",
+  phone: "+1234567890",
+  items: [
+    {
+      product_id: ObjectId("product1id"),
+      product_name: "Wireless Headphones",
+      quantity: 1,
+      unit_price: 149.99,
+      total_item_price: 149.99
+    },
+    {
+      product_id: ObjectId("product2id"),
+      product_name: "Smart Watch",
+      quantity: 2,
+      unit_price: 199.99,
+      total_item_price: 399.98
+    }
+  ],
+  status: "placed",
+  amount: 549.97,
+  shipping_fee: 15.00,
+  tax_amount: 45.37,
+  addresses: {
+    shipping: {
+      street: "123 Main St",
+      city: "Anytown",
+      state: "NY",
+      zipcode: "10001",
+      country: "USA"
+    },
+    billing: {
+      street: "123 Main St",
+      city: "Anytown",
+      state: "NY",
+      zipcode: "10001",
+      country: "USA"
+    }
+  },
+  tracking_number: "TRK" + new Date().getTime().toString().substring(7),
+  created_at: new Date(),
+  updated_at: new Date(),
+  payment_method: "credit_card"
+});
