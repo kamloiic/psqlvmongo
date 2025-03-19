@@ -1,6 +1,6 @@
-## E-commerce Frontend Wireframes
+## E-commerce Webpage Description
 
-The application includes several key interfaces that reflect the typical e-commerce user experience. These wireframes illustrate how the database schema supports  user interactions.
+The application includes several key interfaces that reflect the typical e-commerce user experience. These  interface descriptions, that include wireframe representations and MQL example queries, illustrate the required data and functionality and should be your starting point when designing the data schema in MongoDB. Remember, when designing a data model in MongoDB you should first start with the requirements, i.e., understand access patterns, identify relationships and define performance requirements, and then, move on to designing the schema that best supports those requirements.
 
 ### Homepage
 
@@ -8,21 +8,14 @@ The application includes several key interfaces that reflect the typical e-comme
 
 The homepage serves as the main landing page for customers and represents the primary product discovery interface. Key features include:
 
-- **Product Grid**: Six featured products displayed in a responsive grid layout, allowing for easy scanning of multiple offerings at once. The grid automatically adapts to different screen sizes to ensure an optimal viewing experience.
+- **Product Grid**: Six promoted products displayed that allows for easy scanning of multiple offerings at once.
 
 - **Product Information**: Each product card displays essential information needed for quick decision-making:
-  - Product name: Clear, readable text that identifies the item
-  - Product price: Prominently displayed to facilitate purchase decisions
-  - Product image: High-visibility area (shown as placeholders in the wireframe) to showcase the product visually
+  - Product name
+  - Product price
+  - Product image
 
-- **Add to Cart Functionality**: Each product includes a dedicated "Add to Cart" button that enables customers to make immediate purchase decisions without navigating to product detail pages.
-
-- **Navigation Elements**:
-  - Search bar: Positioned at the top for product discovery through keyword searches
-  - User profile access: Icon in the top-right providing account management functions
-  - Shopping cart: "View cart" button giving immediate access to review selected products
-  - Scrollable interface: Vertical scrolling to browse additional products beyond the initially visible offerings
-
+- **Add to Cart Functionality**: Each product includes a dedicated "Add to Cart" button that enables customers to make immediate purchase decisions without navigating to product detail pages. To see how this functionality is implemented at the database level, refer to the [Add Item To The Cart](#add-item-to-the-cart) section, which details the MongoDB query operations.
 
 From a database perspective, this interface primarily interacts with the product catalog, requiring efficient querying of product details, inventory status, and pricing information. The MongoDB schema will need to support rapid retrieval of these product listings. For example, this query serves the primary purpose of retrieving the latest 6 published products with their names and prices, enabling quick display of recent additions to the catalog for users browsing the storefront.
 
@@ -35,8 +28,8 @@ db.products.find({
     } 
 })
 .project({
-    name: 1,
-    price: 1,
+    product_name: 1,
+    unitary_price: 1,
     picture_link: 1
 })
 .sort({ 
@@ -51,31 +44,26 @@ db.products.find({
 
 The product page provides detailed information about individual products, facilitating informed purchase decisions. Key features of this interface include:
 
-- **Product Images**: A prominent section displaying high-resolution images of the product. Users can browse through multiple images using clickable thumbnails, enhancing their visual understanding of the item.
+- **Product Image**: A section displaying a high-resolution picture of the product.
 
 - **Product Information**: This section delivers detailed product data to assist customers in evaluating their options:
-  - **Product Name and Price**: Displayed near the top, making it easy to recognize and assess the product financially.
+  - **Product Name**: 
+  - **Price**: Provides the product unitary price
   - **Description**: A text area providing in-depth information about the product’s features, specifications, and benefits.
 
-- **Add to Cart Functionality**: An easily accessible button allows users to quickly add the product to their cart, encouraging efficient purchase processes.
+- **Add to Cart Functionality**: An easily accessible button allows users to quickly add the product to their cart. To see how this functionality is implemented at the database level, refer to the [Add Item To The Cart](#add-item-to-the-cart) section, which details the MongoDB query operations.
 
-- **Customer Reviews**: A section devoted to user-generated content displaying the first 15 reviews. Additional reviews become visible as the user scrolls down, offering insights into customer satisfaction and experiences.
+- **Customer Reviews**: A section displaying the first 15 reviews. Additional reviews become visible as the user scrolls down, offering insights into customer satisfaction and experiences.
 
-- **Navigation Elements**:
-  - **Search Bar**: Positioned for straightforward keyword-based search capabilities, designed to streamline product discovery.
-  - **Profile Access**: Easily recognized icon enabling users to enter account management and profile settings.
-  - **View Cart**: Quick access to the shopping cart is provided to review selected items.
-  - **Scrollable Interface**: Allows browsing through detailed product information without leaving the page.
-
-From a database perspective, this interface requires fast access to specific product details, including descriptions, pricing, availability, and reviews. The MongoDB schema should support efficient retrieval and display of this information. Here's an example query that retrieves detailed information for a particular product, including its reviews:
+From a database perspective, this interface requires fast access to specific product details, including descriptions, pricing, availability, and the last 15 reviews. The MongoDB schema should support efficient retrieval and display of this information. Here's an example query that retrieves detailed information for a particular product, including its reviews:
 ```javascript
 db.products.find({ 
-      _id: ObjectId("productid"),
+      product_id: "real_product_id",
       is_active: true,
   }).
   project({
-      name: 1,
-      price: 1,
+      product_name: 1,
+      unitary_price: 1,
       description: 1,
       picture_link: 1
       last_15_reviews:1,
@@ -84,7 +72,6 @@ db.products.find({
       dimensions:1
     });
 ```
-Also, from this view you can add a product to the cart. From a database perspective you will find what kind of query this will.
 
 ### Review Cart and Confirm Order Page
 
@@ -93,36 +80,76 @@ Also, from this view you can add a product to the cart. From a database perspect
 The cart page allows customers to review their own cart, where they can see their selected items before completing the purchase. This checkout interface includes several key components:
 
 - **Product List**: Displays all items added to the cart in a scrollable list format, showing:
-  - Product thumbnails: Visual representations of each item
-  - Product name and brief description: Clear identification of items being purchased
+  - Product pictures: Visual representations of each item
+  - Product name
+  - Product description
   - Product price: Individual pricing for each item
+  - Quantity: Number of items chosen
   - Quantity controls: "+1/-1" buttons allowing customers to adjust quantities directly from the cart
 
 - **Selection Controls**: Checkboxes next to each product enable users to:
   - Select/deselect specific items for purchase
-  - Potentially save items for later or remove them from the order
   - Control which items are included in the final transaction
 
 - **Order Processing**:
-  - "Place order" button: Prominently displayed call-to-action that completes the purchase process
-  - Scrollable interface: Allows reviewing all cart items regardless of order size
+  - "Place order" button: This button completes the purchase process and add a new order.
 
 From a database perspective, this interface interacts mainly with the carts collection. The MongoDB schema will need to support efficient retrieval of a specific costumer cart, containing product details and management of cart state. Here's an example query that supports retrieval of a user's cart with product details:
 
 ```javascript
 db.carts.find({
-  email:"user_email"
+  user_id:"real_user_id",
+  cart_id:"real_cart_id"
 }).
 project({
-  email:0,
-  cart_items:1,
-  total_price:1
+  "cart_items.product_name":1,
+  "cart_items.description":1,
+  "cart_items.quantity":1,
+  "cart_item.unitary_price":1,
+  "cart_item.picture_link":1,
 }). sort("cart_items.added_at":-1)
 ```
-
+The total amount can be compute running an aggregation pipeline. An example query is provided below:
+```javascript
+db.carts.aggregate([
+  {
+    $match: {
+      cart_id:"real_cart_id",
+			user_id:"real_user_id"
+    }
+  },
+  {
+    $addFields: {
+      filtered_items: {
+        $filter: {
+          input: "$cart_items",
+          as: "item",
+          cond: { $in: ["$$item.product_name", ["selected_product_1", "selected_product_2"]] }
+        }
+      }
+    }
+  },
+  {
+    $project: {
+      filtered_items: 1,
+      totalAmount: {
+        $sum: {
+          $map: {
+            input: "$filtered_items",
+            as: "item",
+            in: {
+              $multiply: ["$$item.quantity", "$$item.unitary_price"]
+            }
+          }
+        }
+      }
+    }
+  }
+])
+```
 #### Add Item to the Cart
 
-As discussed in the Homepage and Product page sections, items can be added to the cart from multiple interfaces within the application. Both the Homepage's product grid and the Product Page include 'Add to Cart' buttons that trigger the cart update process. When a customer clicks these buttons, the application needs to handle various scenarios: creating a new cart, adding new products, or updating existing product quantities.
+As discussed in the Homepage and Product page sections, items can be added to the cart from multiple interfaces within the application. Both the Homepage's product and the Product Page include 'Add to Cart' buttons that trigger the cart update process. When a customer clicks these buttons, the application needs to handle adding new products, or updating existing product quantities. From a database perspective, this is how an example query would look like:
 
 ```javascript
 [{
@@ -132,7 +159,6 @@ As discussed in the Homepage and Product page sections, items can be added to th
 },
    {
       $set: {
-        // First, set defaults for a new document if needed
         cart_item: { 
           $ifNull: ["$cart_item", []] 
         },
@@ -143,7 +169,6 @@ As discussed in the Homepage and Product page sections, items can be added to th
     },
     {
       $set: {
-        // Check if the product exists in the cart
         productExists: {
           $in: ["product_name", { 
             $map: { 
@@ -157,12 +182,10 @@ As discussed in the Homepage and Product page sections, items can be added to th
     },
     {
       $set: {
-        // Update the cart based on whether product exists
         cart_item: {
           $cond: {
             if: "$productExists",
             then: {
-              // Product exists - update its quantity
               $map: {
                 input: "$cart_item",
                 as: "item",
@@ -182,7 +205,6 @@ As discussed in the Homepage and Product page sections, items can be added to th
               }
             },
             else: {
-              // Product doesn't exist - add it to cart
               $concatArrays: [
                 "$cart_item",
                 [{
@@ -196,18 +218,13 @@ As discussed in the Homepage and Product page sections, items can be added to th
             }
           }
         },
-        
-        // Always update the total price
         total_price: {
           $add: ["$total_price", price]
         },
-        
-        // Always update last_modified
         last_modified: new Date()
       }
     },
     {
-      // Remove the temporary field
       $unset: ["productExists"]
     }
   ]
@@ -227,7 +244,6 @@ On the other hand deleting items from the cart requires a specialized database o
     },
     {
       $set: {
-        // Find the item to be removed and calculate its total price
         itemToRemove: {
           $filter: {
             input: "$cart_item",
@@ -239,7 +255,6 @@ On the other hand deleting items from the cart requires a specialized database o
     },
     {
       $set: {
-        // Calculate the price to deduct based on price × quantity
         priceToDeduct: {
           $multiply: [
             { $arrayElemAt: ["$itemToRemove.price", 0] },
@@ -250,7 +265,6 @@ On the other hand deleting items from the cart requires a specialized database o
     },
     {
       $set: {
-        // Remove the item from the cart
         cart_item: {
           $filter: {
             input: "$cart_item",
@@ -259,13 +273,10 @@ On the other hand deleting items from the cart requires a specialized database o
           }
         },
         
-        // Update the total price
         total_price: { $subtract: ["$total_price", "$priceToDeduct"] },
         
-        // Update last_modified timestamp
         last_modified: new Date(),
         
-        // Set status to "empty" if cart becomes empty, otherwise keep it "active"
         status: {
           $cond: {
             if: { 
@@ -289,7 +300,6 @@ On the other hand deleting items from the cart requires a specialized database o
       }
     },
     {
-      // Remove temporary fields
       $unset: ["itemToRemove", "priceToDeduct"]
     }
   ]
@@ -379,4 +389,54 @@ db.orders.insert({
   created_at: new Date(),
   updated_at: new Date(),
   payment_method: "credit_card"
+});
+```
+
+### Order Details Page
+
+![Order Details Wireframe](/docs/pics/order_details_page.png)
+
+The Order Details page provides customers with a comprehensive view of a specific order information after clicking the "View Details" button from the [orders page](#orders-page). This interface displays all relevant information about a selected order, including:
+
+- **Order Identification**:
+  - Tracking number
+  - Order status: Indicates the current state of the order (processing, shipped, delivered, etc.)
+
+- **Address Information**:
+  - Billing address: Complete billing address used for the order
+  - Shipping address: Delivery destination for the purchased item
+
+- **Payment Information**:
+  - Payment method: The method used to complete the transaction (credit card, PayPal, etc.)
+  - Price breakdown: Clear itemization of costs including:
+    - Subtotal: Base price of all items
+    - VAT/Tax: Applied taxes
+    - Shipping fee: Cost for delivery
+    - Total amount: Final payment amount
+
+- **Product Details**:
+  - Product picture: Visual representation of the purchased item
+  - Product name: Clear identification of the item purchased
+  - Product description: Additional details about the purchased product
+
+From a database perspective, this interface retrieves detailed information from a specific order document in the orders collection. Here's an example query that supports the retrieval of comprehensive order details:
+
+```javascript
+db.orders.find({ 
+    email: "user_email",
+    tracking_number: "tracking_number_value"
+})
+.project({
+    tracking_number: 1,
+    status: 1,
+    "addresses.shipping_address": 1,
+    "adresses.billing_address":1
+    payment_method: 1,
+    "item.product_name":1,
+    "item.description":1,
+    "item.quantity":1,
+    "item.unitary_price:":1,
+    "item.picture_link":1,
+    tax_amount:1,
+    shipping_fee: 1,
 });
