@@ -306,7 +306,7 @@ On the other hand deleting items from the cart requires a specialized database o
   ```
 
  #### Order Processing:
-  "Place order" button: It displays a call-to-action that completes the purchase process. When clicked, this button initiates the creation of a new order record in the orders collection, which then becomes visible in the Orders page. This action effectively transforms cart items into an order with a unique tracking number and timestamp. To see how this works from a database perspective navigate to [orders page](#orders-page).
+  "Place order" button: It displays a call-to-action that completes the purchase process. When clicked, this button initiates the creation of a new order record in the orders collection, which then becomes visible in the Orders page. This action effectively transforms cart items into an order with a unique tracking number and timestamp. To see how this works from a database perspective navigate to [generating an order](#generating-an-order) page under Orders Page.
 
 
 
@@ -326,17 +326,18 @@ The Orders page provides customers with a comprehensive view of their order hist
 
 - **Order Details**: Each order entry includes a "View Details" button that allows customers to access more comprehensive information about their specific purchase, including detailed item listings, shipping status, and delivery information. This will open a separate tab named Order Details (link)
 
-From a database perspective, this interface primarily interacts with the orders collection. The MongoDB schema will need to support efficient retrieval of order history for a specific customer, including basic order details with the option to access more comprehensive information upon request. Here's an example query that retrieves a user's order history:
+From a database perspective, this interface primarily interacts with the orders collection. The MongoDB schema will need to support efficient retrieval of order history for a specific customer, including basic order details with the option to access more comprehensive information upon request, i.e. clicking the "View Details" bottom. Here's an example query that retrieves a user's order history:
 
 ```javascript
 db.orders.find({ 
-    email: "customer_email"
+    user_id: "real_user_id",
+    order_id: "real_order_id"
 })
 .project({
     created_at: 1,
-    "items.product_name": 1,
-    "items.description":1,
-    "items.quantity":1,
+    "order_items.product_name": 1,
+    "order_items.description":1,
+    "order_items.quantity":1,
     tracking_number: 1,
 })
 .sort({ 
@@ -344,45 +345,49 @@ db.orders.find({
 });
 ```
 
-When considering how orders items are added to an order from a database perspective, an example query, where one document is created for each item in the cart, could be as follows:
+#### Generating an Order
+
+When considering how orders are generated and stored from a database perspective, an example query could be as follows:
 ```javascript
 db.orders.insert({ 
-     email: "customer@example.com",
-  phone: "+1234567890",
-  items: [
+    order_id: "real_order_id",
+    user_id: "real_user_id",
+    status: "real_order_status",
+    amount: 0,
+    shipping_fee: 0,
+    tax_amount: 0,
+  order_items: [
     {
-      product_id: ObjectId("product1id"),
-      product_name: "Wireless Headphones",
-      quantity: 1,
-      unit_price: 149.99,
-      total_item_price: 149.99
+      product_id: "real_product_id",
+      product_name: "real_product_name",
+      description: "real_product_description",
+      quantity: 0,
+      unitary_price: 0,
+      picture_link:"real_picture_link",
+      added_at: new Date()
     },
     {
-      product_id: ObjectId("product2id"),
-      product_name: "Smart Watch",
-      quantity: 2,
-      unit_price: 199.99,
-      total_item_price: 399.98
+      product_id: "real_product_id",
+      product_name: "real_product_name",
+      description: "real_product_description",
+      quantity: 0,
+      unitary_price: 0,
+      picture_link:"real_picture_link",
+      added_at: new Date()
     }
   ],
-  status: "placed",
-  amount: 549.97,
-  shipping_fee: 15.00,
-  tax_amount: 45.37,
   addresses: {
     shipping: {
-      street: "123 Main St",
-      city: "Anytown",
-      state: "NY",
-      zipcode: "10001",
-      country: "USA"
+      street: "real_street",
+      city: "real_city",
+      zip: 0,
+      country: "real_country"
     },
     billing: {
-      street: "123 Main St",
-      city: "Anytown",
-      state: "NY",
-      zipcode: "10001",
-      country: "USA"
+      street: "real_street",
+      city: "real_city",
+      zip: 0,
+      country: "real_country"
     }
   },
   tracking_number: "TRK" + new Date().getTime().toString().substring(7),
@@ -391,7 +396,6 @@ db.orders.insert({
   payment_method: "credit_card"
 });
 ```
-
 ### Order Details Page
 
 ![Order Details Wireframe](/docs/pics/order_details_page.png)
@@ -419,24 +423,81 @@ The Order Details page provides customers with a comprehensive view of a specifi
   - Product name: Clear identification of the item purchased
   - Product description: Additional details about the purchased product
 
-From a database perspective, this interface retrieves detailed information from a specific order document in the orders collection. Here's an example query that supports the retrieval of comprehensive order details:
+From a database perspective, this interface retrieves detailed information from a specific product within an order document in the orders collection. Here's an example query that supports the retrieval of comprehensive order details:
 
 ```javascript
-db.orders.find({ 
-    email: "user_email",
-    tracking_number: "tracking_number_value"
+db.orders.aggregate([
+  { $match:{
+      user_id: "real_user_id",
+      order_id: "real_order_id"
+    }
+  },
+  {
+    $addFields:{
+      filtered_order_item:{
+        $filter:{
+          input: "$order_item",
+          as: "item",
+          cond: { $in: ["$$item.product_id", ["selected_product_id"]]}
+    }
+}}},
+  {
+    $project:{
+      tracking_number: 1,
+      status: 1,
+      payment_method: 1,
+      tax_amount:1,
+      shipping_fee: 1,
+      "addresses.shipping_address": 1,
+      "adresses.billing_address":1,
+      "item.product_name":1,
+      "item.description":1,
+      "item.quantity":1,
+      "item.unitary_price:":1,
+      "item.picture_link":1,
+    }
+  }
+]);
+````
+
+### User Profile Page
+
+![User Profile Wireframe](/docs/pics/user_profile_page.png)
+
+The User Profile page provides customers with a comprehensive view of their personal information and account settings. This interface allows users to manage their personal details and access their order history. Key features of this interface include:
+
+- **Personal Information**:
+  - Profile picture: Visual representation of the user
+  - Name: First and last name of the customer
+  - Edit button: Allows users to update their personal information
+
+- **Contact Information**:
+  - Email: Customer's registered email address
+  - Phone: Customer's contact number
+
+- **Address Information**:
+  - Billing address: Complete billing address used for orders
+  - Shipping address: Default delivery destination for purchased items
+
+- **Payment Methods**:
+  - Credit card: Stored payment methods for faster checkout
+
+- **Order Access**:
+  - View orders: Button that redirects users to their order history page
+
+From a database perspective, this interface primarily interacts with the users collection. The MongoDB schema will need to support efficient retrieval of user details, addresses, and payment methods. Here's an example query that retrieves a user's profile information:
+
+```javascript
+db.users.find({ 
+    user_id: "real_user_id"
 })
 .project({
-    tracking_number: 1,
-    status: 1,
-    "addresses.shipping_address": 1,
-    "adresses.billing_address":1
-    payment_method: 1,
-    "item.product_name":1,
-    "item.description":1,
-    "item.quantity":1,
-    "item.unitary_price:":1,
-    "item.picture_link":1,
-    tax_amount:1,
-    shipping_fee: 1,
+    first_name: 1,
+    last_name: 1,
+    email: 1,
+    phone: 1,
+    profile_picture: 1,
+    "addresses.billing": 1,
+    "addresses.shipping": 1,
+    payment_methods: 1
 });
