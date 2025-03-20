@@ -55,7 +55,7 @@ docker-compose --version
 Links to individual set-up steps and their corresponding guides:
 
 
-1. [Understanding the E-commerce Data Model](docs/ecommerce-model.md) - Overview of the e-commerce application structure using the LucidChart diagrams and relational schema.
+1. [Understanding the E-commerce Data Model](docs/ecommerce.md) - Overview of the e-commerce application structure using the LucidChart diagrams and relational schema.
 
 2. [MongoDB Schema Solution](docs/mongodb-schema-solution.md) - A sample MongoDB schema design for the e-commerce application with explanations of design decisions and pattern usage.
   
