@@ -4,7 +4,66 @@ When upgrading an e-commerce application from version 1 to version 2, several ne
 
 ---
 
-## 1. Feature: Tracking Sellers in Orders
+## 1. Understanding Polymorphism in MongoDB
+
+MongoDB natively supports polymorphism through its flexible schema design, allowing different documents within the same collection to have different structures. This contrasts with relational databases like PostgreSQL, where polymorphism is **not natively supported**. In PostgreSQL, if you want some records to include specific fields, the entire table must be updated, meaning that all records will store `NULL` values for fields that do not apply to them.
+
+### **Example: Polymorphic Product Schema**
+In MongoDB, we can store different types of products (e.g., books, electronics) within the same `products` collection, each having different attributes:
+
+#### **Sample Documents**
+```json
+{
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "Smartphone X",
+    "category": "electronics",
+    "specifications": {
+        "screen_size": "6.5 inches",
+        "battery_life": "24 hours"
+    }
+}
+```
+
+```json
+{
+    "_id": "507f1f77bcf86cd799439012",
+    "name": "The Great Gatsby",
+    "category": "book",
+    "specifications": {
+        "author": "F. Scott Fitzgerald",
+        "pages": 180
+    }
+}
+```
+
+### **Querying Across Types**
+```javascript
+db.products.find({ "category": "electronics" })
+db.products.find({ "specifications.screen_size": "6.5 inches" })
+```
+
+### **Advantages of MongoDB Polymorphism**
+- **No Need for Joins** – Data is stored together, reducing complexity.
+- **Flexible Evolution** – New fields can be added without altering existing data.
+- **Efficient Reads** – All relevant data is retrieved in a single query.
+
+### **PostgreSQL Limitation: No Native Polymorphism**
+In PostgreSQL, polymorphism requires table inheritance or a strict schema where all possible fields must be predefined. If a new field is added for one specific type of record, the entire table must be modified, causing most records to store `NULL` values for fields they do not need. This leads to:
+- **Schema Bloat** – Many unused `NULL` values waste storage.
+- **Rigid Structure** – Schema changes require table alterations and data migrations.
+- **Performance Issues** – Queries may need to filter out numerous `NULL` values.
+
+For example, adding a `screen_size` field to the `products` table for electronics means every book record in the same table will also have a `screen_size` column set to `NULL`.
+
+```sql
+ALTER TABLE products ADD COLUMN screen_size VARCHAR(50);
+```
+
+This rigid structure makes PostgreSQL significantly less adaptable compared to MongoDB for applications that require flexible and evolving schemas.
+
+---
+
+## 2. Feature: Tracking Sellers in Orders
 
 ### **MongoDB Approach**
 MongoDB's flexible schema allows you to introduce a `"seller"` field without downtime.
@@ -40,7 +99,7 @@ Schema modifications in PostgreSQL require structured changes.
 
 ---
 
-## 2. Feature: Customer Reviews with Sentiment Analysis
+## 3. Feature: Customer Reviews with Sentiment Analysis
 
 ### **MongoDB Approach**
 MongoDB applies the **subset pattern** to store only the **last 15 reviews** per product, keeping queries efficient while maintaining recent records. In addition, MongoDB’s **Atlas Vector Search** can be leveraged to perform sentiment analysis by storing sentiment vectors within the review documents.
@@ -96,7 +155,7 @@ For PostgreSQL, a high-level approach for sentiment analysis involves:
 
 ---
 
-## 3. Feature: Similar Products Using Vector Search
+## 4. Feature: Similar Products Using Vector Search
 
 ### **MongoDB Approach**
 MongoDB 7.1 introduces **$vectorSearch** for efficient similarity searches using **Atlas Vector Search**.
@@ -140,8 +199,7 @@ PostgreSQL supports vector search using the **PGVector** extension.
 ## **Conclusion**
 | Feature                     | MongoDB Advantages                                      | PostgreSQL Challenges                                 |
 |-----------------------------|--------------------------------------------------------|------------------------------------------------------|
+| **Polymorphism**            | Native support, flexible schema                        | Not supported, requires rigid schema with NULLs      |
 | **Tracking Sellers**        | No schema changes, instant updates                     | Requires structured schema changes, migrations       |
-| **Customer Reviews**        | **Subset pattern (last 15 reviews)**, integrated vector search for sentiment analysis  | Requires separate storage, additional setup for vector search |
-| **Similar Products Search** | **Atlas Vector Search** (scalable, integrated)         | Requires PGVector, manual tuning, schema changes      |
-
-MongoDB’s **schema flexibility**, **Atlas Vector Search**, and **native support for modern features** enable seamless upgrades. In contrast, PostgreSQL requires **structured schema changes**, **manual index tuning**, and **additional extensions** to achieve similar functionality.
+| **Customer Reviews**        | Integrated vector search, efficient storage           | Requires separate storage, additional setup         |
+| **Similar Products Search** | Built-in Atlas Vector Search                           | Needs PGVector, manual tuning, schema changes       |
