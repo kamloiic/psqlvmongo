@@ -2,6 +2,8 @@
 
 The application includes several key interfaces that reflect the typical e-commerce user experience. These  interface descriptions, that include wireframe representations and MQL example queries, illustrate the required data and functionality and should be your starting point when designing the data schema in MongoDB. Remember, when designing a data model in MongoDB you should first start with the requirements, i.e., understand access patterns, identify relationships and define performance requirements, and then, move on to designing the schema that best supports those requirements.
 
+Additionally, you can refer to [this SQL diagram](https://dbdiagram.io/d/PostgreSQL-greaterMongoDB-67b6f53e263d6cf9a0d69459) to get a general view of the data, including entity types and relationships, which may help in shaping your MongoDB schema.
+
 ### Homepage
 
 ![Homepage Wireframe](/docs/pics/ecommerce_homepage.png)
@@ -68,8 +70,7 @@ db.products.find({
       picture_link: 1
       last_15_reviews:1,
       stock_quantity:1,
-      weight:1,
-      dimensions:1
+      weight:1
     });
 ```
 
@@ -105,8 +106,8 @@ project({
   "cart_items.product_name":1,
   "cart_items.description":1,
   "cart_items.quantity":1,
-  "cart_item.unitary_price":1,
-  "cart_item.picture_link":1,
+  "cart_items.unitary_price":1,
+  "cart_items.picture_link":1,
 }). sort("cart_items.added_at":-1)
 ```
 The total amount can be compute running an aggregation pipeline. An example query is provided below:
@@ -124,7 +125,7 @@ db.carts.aggregate([
         $filter: {
           input: "$cart_items",
           as: "item",
-          cond: { $in: ["$$item.product_name", ["selected_product_1", "selected_product_2"]] }
+          cond: { $in: ["$$item.product_id", ["selected_product_1_id", "selected_product_2_id"]] }
         }
       }
     }
@@ -149,86 +150,77 @@ db.carts.aggregate([
 ```
 #### Add Item to the Cart
 
-As discussed in the Homepage and Product page sections, items can be added to the cart from multiple interfaces within the application. Both the Homepage's product and the Product Page include 'Add to Cart' buttons that trigger the cart update process. When a customer clicks these buttons, the application needs to handle adding new products, or updating existing product quantities. From a database perspective, this is how an example query would look like:
+As discussed in the Homepage and Product page sections, items can be added to the cart from multiple interfaces within the application. Both the Homepage's product and the Product Page include 'Add to Cart' buttons that trigger the cart update process. When a customer clicks these buttons, the application needs to handle adding new products, or updating existing product quantities. From a database perspective, you can find a query example below. For simplicity purposes, the query does not take all necesarry operations into consideration.
 
 ```javascript
-[{
-  $match: {
-  	email:"user_email"
-  }
-},
-   {
-      $set: {
-        cart_item: { 
-          $ifNull: ["$cart_item", []] 
-        },
-        total_price: { 
-          $ifNull: ["$total_price", 0] 
+db.carts.aggregate([
+  {
+    $match: {
+      cart_id: "real_cart_id",
+      user_id: "real_user_id"
+    }
+  },
+  {
+    $set: {
+      productExists: {
+        $anyElementTrue: {
+          $map: {
+            input: "$cart_item",
+            as: "item",
+            in: { $eq: ["$$item.product_id", "product_id"] }
+          }
         }
       }
-    },
-    {
-      $set: {
-        productExists: {
-          $in: ["product_name", { 
-            $map: { 
-              input: "$cart_item", 
-              as: "item", 
-              in: "$$item.product_name" 
-            } 
-          }]
-        }
-      }
-    },
-    {
-      $set: {
-        cart_item: {
-          $cond: {
-            if: "$productExists",
-            then: {
-              $map: {
-                input: "$cart_item",
-                as: "item",
-                in: {
-                  $cond: {
-                    if: { $eq: ["$$item.product_name", "product_name"] },
-                    then: {
-                      product_name: "$$item.product_name",
-                      description: "$$item.description",
-                      quantity: { $add: ["$$item.quantity", 1] },
-                      price: "$$item.price",
-                      added_at: "$$item.added_at"
-                    },
-                    else: "$$item"
-                  }
+    }
+  },
+  {
+    $set: {
+      cart_item: {
+        $cond: {
+          if: "$productExists",
+          then: {
+            $map: {
+              input: "$cart_item",
+              as: "item",
+              in: {
+                $cond: {
+                  if: { $eq: ["$$item.product_id", "product_id"] },
+                  then: {
+                    product_name: "$$item.product_name",
+                    description: "$$item.description",
+                    quantity: { $add: ["$$item.quantity", 1] },
+                    unitary_price: "$$item.price",
+                    added_at: "$$item.added_at"
+                  },
+                  else: "$$item"
                 }
               }
-            },
-            else: {
-              $concatArrays: [
-                "$cart_item",
-                [{
-                  product_name: "product_name",
-                  description: "description",
-                  quantity: 1,
-                  price: 149.99,
-                  added_at: new Date()
-                }]
-              ]
             }
+          },
+          else: {
+            $concatArrays: [
+              "$cart_item",
+              [{
+                product_name: "product_name",
+                product_id: "real_product_id"
+                description: "real_description",
+                quantity: 1,
+                unitary_price: 149.99,
+                picture_link: 'real_picture_link'
+                added_at: new Date()
+              }]
+            ]
           }
-        },
-        total_price: {
-          $add: ["$total_price", price]
-        },
-        last_modified: new Date()
-      }
-    },
-    {
-      $unset: ["productExists"]
+        }
+      },
+      last_modified: new Date()
     }
-  ]
-```
+  },
+  {
+    $unset: "productExists"
+  }
+]);
+
 
 #### Remove Item from the Cart
 
@@ -393,7 +385,10 @@ db.orders.insert({
   tracking_number: "TRK" + new Date().getTime().toString().substring(7),
   created_at: new Date(),
   updated_at: new Date(),
-  payment_method: "credit_card"
+  payment_method: {
+    type:"real_type",
+    associated_id:"real_id"
+    }
 });
 ```
 ### Order Details Page
