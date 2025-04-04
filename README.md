@@ -57,8 +57,8 @@ Links to individual set-up steps and their corresponding guides:
 
 1. [Understanding the E-commerce Data Model](docs/ecommerce.md) - Overview of the e-commerce application structure using the LucidChart diagrams and relational schema.
 
-2. [MongoDB Schema Solution](docs/mongodb-schema-solution.md) - A sample MongoDB schema design for the e-commerce application with explanations of design decisions and pattern usage.
+2. [MongoDB Schema Solution](docs/mongodb_schema.md) - A sample MongoDB schema design for the e-commerce application with explanations of design decisions and pattern usage.
   
 3. [Setting Up MongoDB and PostgreSQL Locally](database-setup.md) - Complete instructions for setting up both databases using Docker containers.
 
-4. [Schema Evolution Scenarios](docs/schema-evolution.md) - Practical scenarios for testing schema flexibility in both databases.
+4. [Schema Evolution Scenarios](docs/schema_changes.md) - Practical scenarios for testing schema flexibility in both databases.
